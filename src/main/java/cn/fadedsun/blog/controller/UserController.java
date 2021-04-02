@@ -1,6 +1,17 @@
 package cn.fadedsun.blog.controller;
 
+import cn.fadedsun.blog.data.User;
+import cn.fadedsun.blog.mapper.UserMapper;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.SecureUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
+import java.time.Instant;
+import java.util.Optional;
 
 /**
  * @author fuwj
@@ -9,16 +20,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class UserController {
 
+    @Resource
+    private UserMapper userMapper;
 
-    public void register() {
+    @PostMapping("/api/user")
+    public void register(@RequestBody User user) {
         // todo 验证数据是否合法
-
+        if (StrUtil.isBlank(user.getUsername())) {
+            return;
+        }
+        if (StrUtil.isBlank(user.getPassword())) {
+            return;
+        }
         // todo 验证账号是否唯一
+        Optional<User> existUser = userMapper.selectByUsername(user.getUsername());
+        if (existUser.isPresent()) {
+            System.out.println("123456");
+            return;
+        }
 
-        // todo 加密密码
-
+        // todo 加密密码, 并设置默认值
+        user.setPassword(SecureUtil.sha256(user.getPassword()));
+        user.setMotto(StrUtil.EMPTY);
+        user.setNickname(StrUtil.EMPTY);
+        long now = Instant.now().toEpochMilli();
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
         // todo 存入数据库
-
+        userMapper.insert(user);
     }
 
     public void login() {
